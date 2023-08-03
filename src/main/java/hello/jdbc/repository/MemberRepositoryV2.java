@@ -1,18 +1,31 @@
 package hello.jdbc.repository;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.NoSuchElementException;
 
-import hello.jdbc.connection.DBConnectionUtil;
+import javax.sql.DataSource;
+
+import org.springframework.jdbc.support.JdbcUtils;
+
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * JDBC - DriverManger 사용
+ * JDBC - DataSource 사용, JdbcUtils 사용
  */
 
 @Slf4j
-public class MemberRepositoryV0 {
+public class MemberRepositoryV2 {
+
+	private final DataSource dataSource;
+
+	public MemberRepositoryV2(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	public Member save(Member member) throws SQLException {
 		String sql = "insert into member(member_id, money) values (?, ?)";
@@ -65,6 +78,36 @@ public class MemberRepositoryV0 {
 		}
 	}
 
+	public Member findById(Connection con, String memberId) throws SQLException {
+		String sql = "select * from member where member_id = ?";
+
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, memberId);
+
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				Member member = new Member();
+				member.setMemberId(rs.getString("member_id"));
+				member.setMoney(rs.getInt("money"));
+				return member;
+			} else {
+				throw new NoSuchElementException("member not found memberId=" + memberId);
+			}
+
+		} catch (SQLException e) {
+			log.error("db error", e);
+			throw e;
+		} finally {
+			//connection은 여기서 닫지 않는다.
+			JdbcUtils.closeResultSet(rs);
+			JdbcUtils.closeStatement(pstmt);
+		}
+	}
+
 	public void update(String memberId, int money) throws SQLException {
 		String sql = "update member set money=? where member_id=?";
 
@@ -83,6 +126,25 @@ public class MemberRepositoryV0 {
 			throw e;
 		} finally {
 			close(con, pstmt, null);
+		}
+	}
+
+	public void update(Connection con, String memberId, int money) throws SQLException {
+		String sql = "update member set money=? where member_id=?";
+
+		PreparedStatement pstmt = null;
+
+		try {
+			pstmt = con.prepareStatement(sql);
+			pstmt.setInt(1, money);
+			pstmt.setString(2,memberId);
+			int resultSize = pstmt.executeUpdate();
+			log.info("resultSize={}", resultSize);
+		} catch (SQLException e) {
+			log.error("db error", e);
+			throw e;
+		} finally {
+			JdbcUtils.closeStatement(pstmt);
 		}
 	}
 
@@ -107,32 +169,14 @@ public class MemberRepositoryV0 {
 
 	private void close(Connection con, Statement stmt, ResultSet rs) {
 
-		if (rs != null) {
-			try {
-				rs.close();
-			} catch (SQLException e) {
-				log.error("db error", e);
-			}
-		}
-
-		if (stmt != null) {
-			try {
-				stmt.close();
-			} catch (SQLException e) {
-				log.error("db error", e);
-			}
-		}
-
-		if (con != null) {
-			try {
-				con.close();
-			} catch (SQLException e) {
-				log.error("db error", e);
-			}
-		}
+		JdbcUtils.closeResultSet(rs);
+		JdbcUtils.closeStatement(stmt);
+		JdbcUtils.closeConnection(con);
 	}
 
-	private static Connection getConnection() {
-		return DBConnectionUtil.getConnection();
+	private Connection getConnection() throws SQLException {
+		Connection connection = dataSource.getConnection();
+		log.info("get connection={}, class={}", connection, connection.getClass());
+		return connection;
 	}
 }
