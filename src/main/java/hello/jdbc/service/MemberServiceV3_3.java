@@ -1,6 +1,8 @@
 package hello.jdbc.service;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class MemberServiceV3_3 {
 	private void bizLogic(String fromId, String toId, int money) throws SQLException {
 		Member fromMember = memberRepository.findById(fromId);
 		Member toMember = memberRepository.findById(toId);
+
 
 		memberRepository.update(fromId, fromMember.getMoney() - money);
 		validation(toMember);
