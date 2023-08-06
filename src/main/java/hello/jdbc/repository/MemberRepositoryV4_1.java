@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * JDBC - DataSource 사용, JdbcUtils 사용
+ * runtime exception 적용
  */
 
 @Slf4j

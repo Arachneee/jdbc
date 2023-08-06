@@ -20,7 +20,7 @@ import hello.jdbc.repository.ex.MydbException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * JDBC - DataSource 사용, JdbcUtils 사용
+ * JDBC - translator 적용
  */
 
 @Slf4j

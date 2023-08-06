@@ -16,7 +16,7 @@ import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * JDBC - DataSource 사용, JdbcUtils 사용
+ * JDBC - DataSource 사용, JdbcUtils 사용, DataSourceUtils 사용
  */
 
 @Slf4j
